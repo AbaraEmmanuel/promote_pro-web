@@ -1,104 +1,87 @@
-window.onload = async function() {
-    if (window.Telegram && window.Telegram.WebApp) {
-        const user = window.Telegram.WebApp.initDataUnsafe;
-        const userId = user?.user?.id;
-        const firstName = user?.user?.first_name || "";
-        const lastName = user?.user?.last_name || "";
+// Firebase configuration and initialization
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // Display the username
-        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
-
-        if (userId) {
-            try {
-                // Fetch user data from the server
-                const response = await fetch(`/data/${userId}`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('points').textContent = data.points || 0;
-                    document.getElementById('tasksDone').textContent = data.tasks_done || 0;
-
-                    // Mark completed tasks
-                    const completedTasks = data.completed_tasks || [];
-                    document.querySelectorAll('.task').forEach(task => {
-                        if (completedTasks.includes(task.id)) {
-                            task.classList.add('completed');
-                            task.querySelector('.complete-btn').textContent = 'Completed';
-                        }
-                    });
-                } else {
-                    await initializeUserData(userId);
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-
-            // Handle task completion
-            document.querySelectorAll('.complete-btn').forEach(button => {
-                button.addEventListener('click', async function() {
-                    const taskId = this.getAttribute('data-task');
-                    const taskElement = document.getElementById(taskId);
-                    let points = parseInt(document.getElementById('points').textContent);
-                    let tasksDone = parseInt(document.getElementById('tasksDone').textContent);
-
-                    if (!taskElement.classList.contains('completed')) {
-                        taskElement.classList.add('completed');
-                        this.textContent = 'Completed';
-
-                        points += 10;
-                        tasksDone += 1;
-
-                        document.getElementById('points').textContent = points;
-                        document.getElementById('tasksDone').textContent = tasksDone;
-
-                        await updateUserData(userId, points, tasksDone);
-                    }
-                });
-            });
-        }
-    } else {
-        console.error('Telegram WebApp is not available');
-    }
+// Your Firebase config
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
+  authDomain: "promote-pro-8f9aa.firebaseapp.com",
+  databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
+  projectId: "promote-pro-8f9aa",
+  storageBucket: "promote-pro-8f9aa.firebasestorage.app",
+  messagingSenderId: "553030063178",
+  appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
+  measurementId: "G-KZ89FN869W"
 };
 
-// Function to initialize user data
-async function initializeUserData(userId) {
-    try {
-        await fetch('/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId,
-                points: 0,
-                tasksDone: 0,
-                completedTasks: []
-            })
-        });
-    } catch (error) {
-        console.error('Error initializing user data:', error);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Function to load user data
+async function loadUserData(userId) {
+  const userRef = doc(db, "users", userId);
+  const userDoc = await getDoc(userRef);
+
+  if (userDoc.exists()) {
+    const userData = userDoc.data();
+    document.getElementById("points").innerText = userData.points;
+    if (userData.tasks) {
+      for (const [taskId, task] of Object.entries(userData.tasks)) {
+        document.getElementById(taskId).querySelector(".task-status").innerText = task.status;
+      }
     }
+  } else {
+    // Initialize user data if not present
+    await setDoc(userRef, { points: 0, tasks: {} });
+  }
 }
 
-// Function to update user data
-async function updateUserData(userId, points, tasksDone) {
-    try {
-        const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
-
-        await fetch('/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId,
-                points,
-                tasksDone,
-                completedTasks
-            })
-        });
-    } catch (error) {
-        console.error('Error updating user data:', error);
+// Function to submit task link
+async function submitTask(userId, taskId, link) {
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, {
+    [`tasks.${taskId}`]: {
+      link: link,
+      status: "On review",
+      pointsEarned: 0
     }
+  });
+  
+  document.getElementById(taskId).querySelector(".task-status").innerText = "On review";
 }
+
+// Listen for status changes to "Done" in Firestore and update points
+function listenForStatusUpdates(userId) {
+  const userRef = doc(db, "users", userId);
+  onSnapshot(userRef, (doc) => {
+    const userData = doc.data();
+    document.getElementById("points").innerText = userData.points;
+    if (userData.tasks) {
+      for (const [taskId, task] of Object.entries(userData.tasks)) {
+        const statusElement = document.getElementById(taskId).querySelector(".task-status");
+        statusElement.innerText = task.status;
+        if (task.status === "Done") {
+          statusElement.classList.add("done");
+        }
+      }
+    }
+  });
+}
+
+// Add event listeners for task submissions
+document.querySelectorAll(".submit-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const taskId = button.dataset.task;
+    const link = document.getElementById(`taskLink${taskId.slice(-1)}`).value;
+    const userId = "uniqueTelegramId"; // Replace with unique Telegram ID
+
+    await submitTask(userId, taskId, link);
+  });
+});
+
+// Load user data and start listening for updates
+const userId = "uniqueTelegramId"; // Replace with unique Telegram ID
+loadUserData(userId);
+listenForStatusUpdates(userId);
