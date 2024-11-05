@@ -1,8 +1,4 @@
-// Firebase configuration and initialization
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-
-// Your Firebase config
+// Firebase configuration (replace with your own Firebase project details)
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
@@ -16,72 +12,88 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// Function to load user data
+// Get Telegram WebApp user information
+const user = window.Telegram.WebApp.initDataUnsafe.user;
+
+// Set username in the profile section
+if (user && user.username) {
+    document.getElementById("userName").innerText = user.username;
+} else {
+    document.getElementById("userName").innerText = "Guest"; // Default text if no username found
+}
+
+// Use user ID (Telegram ID) for Firebase user document ID
+const userId = user?.id || "testUserId"; // Replace "testUserId" for testing without Telegram
+
+// Load user data from Firestore
 async function loadUserData(userId) {
-  const userRef = doc(db, "users", userId);
-  const userDoc = await getDoc(userRef);
+    console.log("Loading data for user:", userId); // Debugging
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
 
-  if (userDoc.exists()) {
-    const userData = userDoc.data();
-    document.getElementById("points").innerText = userData.points;
-    if (userData.tasks) {
-      for (const [taskId, task] of Object.entries(userData.tasks)) {
+    if (userDoc.exists) {
+        console.log("User data found:", userDoc.data()); // Debugging
+        const userData = userDoc.data();
+        document.getElementById("points").innerText = userData.points || 0;
+        updateTaskStatuses(userData.tasks || {});
+    } else {
+        console.log("No user data found, initializing..."); // Debugging
+        await userRef.set({ points: 0, tasks: {} });
+    }
+}
+
+// Update task statuses on the dashboard
+function updateTaskStatuses(tasks) {
+    Object.keys(tasks).forEach(taskId => {
+        const task = tasks[taskId];
         document.getElementById(taskId).querySelector(".task-status").innerText = task.status;
-      }
-    }
-  } else {
-    // Initialize user data if not present
-    await setDoc(userRef, { points: 0, tasks: {} });
-  }
+    });
 }
 
-// Function to submit task link
-async function submitTask(userId, taskId, link) {
-  const userRef = doc(db, "users", userId);
-  await updateDoc(userRef, {
-    [`tasks.${taskId}`]: {
-      link: link,
-      status: "On review",
-      pointsEarned: 0
-    }
-  });
-  
-  document.getElementById(taskId).querySelector(".task-status").innerText = "On review";
-}
-
-// Listen for status changes to "Done" in Firestore and update points
+// Listen for real-time updates in Firestore (for task status changes)
 function listenForStatusUpdates(userId) {
-  const userRef = doc(db, "users", userId);
-  onSnapshot(userRef, (doc) => {
-    const userData = doc.data();
-    document.getElementById("points").innerText = userData.points;
-    if (userData.tasks) {
-      for (const [taskId, task] of Object.entries(userData.tasks)) {
-        const statusElement = document.getElementById(taskId).querySelector(".task-status");
-        statusElement.innerText = task.status;
-        if (task.status === "Done") {
-          statusElement.classList.add("done");
+    const userRef = db.collection("users").doc(userId);
+    userRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            const userData = doc.data();
+            document.getElementById("points").innerText = userData.points;
+            updateTaskStatuses(userData.tasks);
         }
-      }
-    }
-  });
+    });
 }
 
-// Add event listeners for task submissions
-document.querySelectorAll(".submit-btn").forEach((button) => {
-  button.addEventListener("click", async () => {
-    const taskId = button.dataset.task;
-    const link = document.getElementById(`taskLink${taskId.slice(-1)}`).value;
-    const userId = "uniqueTelegramId"; // Replace with unique Telegram ID
+// Submit a task to Firestore
+async function submitTask(userId, taskId, link) {
+    console.log("Submitting task:", taskId, "for user:", userId); // Debugging
+    const userRef = db.collection("users").doc(userId);
+    await userRef.update({
+        [`tasks.${taskId}`]: {
+            link: link,
+            status: "On review",
+            pointsEarned: 0
+        }
+    });
+    document.getElementById(taskId).querySelector(".task-status").innerText = "On review";
+}
 
-    await submitTask(userId, taskId, link);
-  });
+// Attach event listeners to task submit buttons
+document.querySelectorAll(".submit-btn").forEach(button => {
+    button.addEventListener("click", () => {
+        const taskId = button.getAttribute("data-task");
+        const linkInput = document.getElementById(taskId).querySelector("input[type='text']");
+        const link = linkInput.value;
+
+        if (link) {
+            submitTask(userId, taskId, link);
+        } else {
+            alert("Please paste a valid link.");
+        }
+    });
 });
 
-// Load user data and start listening for updates
-const userId = "uniqueTelegramId"; // Replace with unique Telegram ID
+// Load user data and set up real-time listener for changes
 loadUserData(userId);
 listenForStatusUpdates(userId);
