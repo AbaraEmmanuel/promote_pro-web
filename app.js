@@ -1,57 +1,104 @@
-// Get user data (this assumes user data is available via a Telegram context)
-const userId = Telegram.WebApp.initDataUnsafe.user.id; // Adjust as needed
+window.onload = async function() {
+    if (window.Telegram && window.Telegram.WebApp) {
+        const user = window.Telegram.WebApp.initDataUnsafe;
+        const userId = user?.user?.id;
+        const firstName = user?.user?.first_name || "";
+        const lastName = user?.user?.last_name || "";
 
-// Function to submit a task
-document.querySelectorAll('.submit-btn').forEach(button => {
-    button.addEventListener('click', async (event) => {
-        const taskId = event.target.getAttribute('data-task');
-        const taskLinkInput = document.getElementById(`taskLink${taskId.slice(-1)}`);
-        const taskStatus = document.getElementById(`status${taskId.slice(-1)}`);
+        // Display the username
+        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
-        if (taskLinkInput.value.trim()) {
+        if (userId) {
             try {
-                // Save task link to Firestore
-                await db.collection('users').doc(userId.toString()).collection('tasks').doc(taskId).set({
-                    link: taskLinkInput.value,
-                    status: 'On review',
-                    timestamp: new Date()
-                });
+                // Fetch user data from the server
+                const response = await fetch(`/data/${userId}`);
+                const data = await response.json();
 
-                // Update UI
-                taskStatus.textContent = 'On review';
-                taskStatus.classList.add('on-review');
-                event.target.disabled = true; // Disable button after submission
+                if (response.ok) {
+                    document.getElementById('points').textContent = data.points || 0;
+                    document.getElementById('tasksDone').textContent = data.tasks_done || 0;
 
+                    // Mark completed tasks
+                    const completedTasks = data.completed_tasks || [];
+                    document.querySelectorAll('.task').forEach(task => {
+                        if (completedTasks.includes(task.id)) {
+                            task.classList.add('completed');
+                            task.querySelector('.complete-btn').textContent = 'Completed';
+                        }
+                    });
+                } else {
+                    await initializeUserData(userId);
+                }
             } catch (error) {
-                console.error('Error saving task:', error);
-                alert('Failed to submit the task. Please try again.');
+                console.error('Error fetching user data:', error);
             }
-        } else {
-            alert('Please provide a valid link.');
-        }
-    });
-});
 
-// Real-time listener for task updates
-db.collection('users').doc(userId.toString()).collection('tasks').onSnapshot(snapshot => {
-    snapshot.forEach(doc => {
-        const taskData = doc.data();
-        const taskId = doc.id;
-        const taskStatus = document.getElementById(`status${taskId.slice(-1)}`);
+            // Handle task completion
+            document.querySelectorAll('.complete-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const taskId = this.getAttribute('data-task');
+                    const taskElement = document.getElementById(taskId);
+                    let points = parseInt(document.getElementById('points').textContent);
+                    let tasksDone = parseInt(document.getElementById('tasksDone').textContent);
 
-        if (taskData.status === 'Done') {
-            taskStatus.textContent = 'Done';
-            taskStatus.classList.remove('on-review');
-            taskStatus.classList.add('done');
+                    if (!taskElement.classList.contains('completed')) {
+                        taskElement.classList.add('completed');
+                        this.textContent = 'Completed';
 
-            // Update points
-            db.collection('users').doc(userId.toString()).get().then(userDoc => {
-                const currentPoints = userDoc.data()?.points || 0;
-                db.collection('users').doc(userId.toString()).update({
-                    points: currentPoints + 10
+                        points += 10;
+                        tasksDone += 1;
+
+                        document.getElementById('points').textContent = points;
+                        document.getElementById('tasksDone').textContent = tasksDone;
+
+                        await updateUserData(userId, points, tasksDone);
+                    }
                 });
-                document.getElementById('points').textContent = currentPoints + 10;
             });
         }
-    });
-});
+    } else {
+        console.error('Telegram WebApp is not available');
+    }
+};
+
+// Function to initialize user data
+async function initializeUserData(userId) {
+    try {
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points: 0,
+                tasksDone: 0,
+                completedTasks: []
+            })
+        });
+    } catch (error) {
+        console.error('Error initializing user data:', error);
+    }
+}
+
+// Function to update user data
+async function updateUserData(userId, points, tasksDone) {
+    try {
+        const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
+
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points,
+                tasksDone,
+                completedTasks
+            })
+        });
+    } catch (error) {
+        console.error('Error updating user data:', error);
+    }
+}
