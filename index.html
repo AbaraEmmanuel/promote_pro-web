@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div id="dashboard" class="dashboard hidden">
+      <h1>Welcome to your dashboard, <span id="username"></span></h1>
+      <p>Your Points: <span id="points">0</span></p>
+
+      <div id="tasks-container">
+        <h2>Your Tasks</h2>
+        <div id="tasks"></div>
+      </div>
+
+      <button id="logout-button">Logout</button>
+    </div>
+
+    <div id="login-container" class="login-container">
+      <h2>Log in with Telegram</h2>
+      <button id="login-button">Login</button>
+    </div>
+  </div>
+</body>
+</html>
