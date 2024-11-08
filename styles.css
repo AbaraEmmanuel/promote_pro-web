@@ -1,89 +1,105 @@
-/* Reset some default styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* Basic styling */
+/* General styling */
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  color: #333;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1a001a; /* Dark purple */
+    color: #fff;
 }
 
 .container {
-  width: 90%;
-  max-width: 500px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #2b0035;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Dashboard styling */
-.dashboard {
-  text-align: center;
+header {
+    text-align: center;
+    margin-bottom: 20px;
 }
 
 h1 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+    color: #bb86fc;
 }
 
-#points {
-  font-weight: bold;
-  color: #0088cc;
+.profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-#tasks-container {
-  margin-top: 20px;
+.profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #bb86fc;
 }
 
-#tasks {
-  margin-top: 10px;
+.profile-name {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.stats, .tasks {
+    margin-top: 20px;
+}
+
+.points {
+    font-size: 18px;
 }
 
 .task {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    border-bottom: 1px solid #442c4b;
+    background-color: #38004d;
+    border-radius: 5px;
+    margin-bottom: 10px;
 }
 
-.task h3 {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 8px;
+input[type="text"] {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #664370;
+    background-color: #2b0035;
+    color: #fff;
 }
 
-.task input[type="text"] {
-  padding: 5px;
-  width: 80%;
-  max-width: 300px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 5px;
+.submit-btn {
+    background-color: #6200ea;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
 }
 
-.task button {
-  padding: 5px 10px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.submit-btn:hover {
+    background-color: #3700b3;
 }
 
-.task button.reviewing {
-  background-color: #ff9800;
+.task-status {
+    font-size: 14px;
+    color: #ffcb6b;
 }
 
-.task button:hover {
-  background-color: #45a049;
+.task-status.on-review {
+    color: #FFA500; /* Orange for "On review" */
+}
+
+.task-status.done {
+    color: #32CD32; /* Green for "Done" */
+}
+
+footer {
+    text-align: center;
+    margin-top: 20px;
+    color: #bb86fc;
+    font-size: 0.9em;
 }
