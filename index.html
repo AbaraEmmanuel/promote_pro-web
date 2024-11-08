@@ -1,23 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
-  <script defer src="app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/9.x/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
+            authDomain: "promote-pro-8f9aa.firebaseapp.com",
+            projectId: "promote-pro-8f9aa",
+            storageBucket: "promote-pro-8f9aa.appspot.com",
+            messagingSenderId: "553030063178",
+            appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
+            measurementId: "G-KZ89FN869W"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+    <script defer src="app.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div id="dashboard" class="dashboard">
-      <h1>Welcome to your dashboard, <span id="username"></span></h1>
-      <p>Your Points: <span id="points">0</span></p>
-
-      <div id="tasks-container">
-        <h2>Your Tasks</h2>
-        <div id="tasks"></div>
-      </div>
+    <div class="container">
+        <header>
+            <h1>Welcome to your dashboard!</h1>
+            <div class="profile">
+                <img id="profilePic" class="profile-pic" src="" alt="Profile Picture">
+                <div id="userName" class="profile-name">Username</div>
+            </div>
+        </header>
+        <main>
+            <div class="stats">
+                <div class="points">Points: <span id="points">0</span></div>
+            </div>
+            <div class="tasks">
+                <h2>Available Tasks</h2>
+                <div class="task" id="task1">
+                    <span>Task 1: Twitter</span>
+                    <input type="text" placeholder="Paste link here" id="taskLink1">
+                    <button class="submit-btn" data-task="task1">Submit</button>
+                    <span class="task-status" id="status1">Pending</span>
+                </div>
+                <!-- Additional tasks can be added here -->
+            </div>
+        </main>
+        <footer>
+            <p>Powered by Telegram Web Apps</p>
+        </footer>
     </div>
-  </div>
 </body>
 </html>
